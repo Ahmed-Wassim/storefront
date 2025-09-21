@@ -1,0 +1,64 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyo
+*.pyd
+
+# ---- Django ----
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+static/
+local_settings.py
+.env
+.env.*        # environment files (e.g., .env.dev, .env.prod)
+
+# If you use Django's default SQLite database and don't want to commit it:
+*.sqlite3
+
+# ---- Virtual Environments ----
+venv/
+env/
+.venv/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# ---- IDE & Editors ----
+.vscode/
+.idea/
+*.swp
+*~
+.project
+.pydevproject
+
+# ---- Distribution / Packaging ----
+build/
+dist/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ---- Testing / Coverage ----
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+coverage.xml
+htmlcov/
+nosetests.xml
+
+# ---- Type Checking / Linting ----
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pyty
