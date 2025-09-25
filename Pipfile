@@ -9,6 +9,7 @@ mysqlclient = "*"
 faker = "*"
 djangorestframework = "*"
 drf-nested-routers = "*"
+django-filter = "*"
 
 [dev-packages]
 
