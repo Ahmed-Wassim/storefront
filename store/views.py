@@ -1,10 +1,9 @@
-from django.shortcuts import get_object_or_404
 from django.db.models import Count
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
-from .models import Collection, OrderItems, Product
-from .serializers import CollectionSerializer, ProductSerializer
+from .models import Collection, OrderItems, Product, Review
+from .serializers import CollectionSerializer, ProductSerializer, ReviewSerializer
 
 
 # Create your views here.
@@ -36,3 +35,8 @@ class CollectionViewSet(ModelViewSet):
             )
 
         return super().destroy(request, *args, **kwargs)
+
+
+class ReviewViewSet(ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
