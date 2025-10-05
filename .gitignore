@@ -62,3 +62,5 @@ nosetests.xml
 .dmypy.json
 .pyre/
 .pyty
+
+tokens.txt
