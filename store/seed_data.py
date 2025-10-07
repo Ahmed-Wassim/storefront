@@ -1,146 +1,132 @@
-"""
-Seed the Store app with random data using Faker.
-
-Usage:
-    python manage.py shell < store/seed_data.py
-    # or pass numbers as environment variables, e.g.:
-    PRODUCTS=20 CUSTOMERS=15 ORDERS=10 python manage.py shell < store/seed_data.py
-"""
-
-import os
 import random
-from decimal import Decimal
+from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
 from faker import Faker
-from datetime import timedelta
-from django.utils import timezone
-
 from store.models import (
-    Promotion,
-    Collection,
     Product,
+    Collection,
+    Promotion,
     Customer,
     Order,
     OrderItems,
-    Address,
     Cart,
     CartItem,
 )
 
 fake = Faker()
+fake.unique.clear()  # Reset any previous uniqueness cache
 
-# ---------- CONFIG (read from environment or default) ----------
-NUM_PRODUCTS = int(os.getenv("PRODUCTS", 10))
-NUM_CUSTOMERS = int(os.getenv("CUSTOMERS", 10))
-NUM_ORDERS = int(os.getenv("ORDERS", 10))
-NUM_CARTS = int(os.getenv("CARTS", 5))
 
-# ---------- OPTIONAL: Clear old data ----------
-print("Clearing old data…")
-OrderItems.objects.all().delete()
-Order.objects.all().delete()
-CartItem.objects.all().delete()
-Cart.objects.all().delete()
-Address.objects.all().delete()
-Product.promotions.through.objects.all()
-Product.objects.all().delete()
-Collection.objects.all().delete()
-Promotion.objects.all().delete()
-Customer.objects.all().delete()
+def seed_data():
+    print("🧹 Clearing old data...")
+    Product.objects.all().delete()
+    Collection.objects.all().delete()
+    Promotion.objects.all().delete()
+    Customer.objects.all().delete()
+    Order.objects.all().delete()
+    Cart.objects.all().delete()
+    CartItem.objects.all().delete()
 
-# ---------- Promotions ----------
-promos = [
-    Promotion.objects.create(description=f"{p}% off", discount=p / 100)
-    for p in (5, 10, 15, 20)
-]
+    print("✅ Creating collections...")
+    collections = []
+    for _ in range(5):
+        collection = Collection.objects.create(title=fake.word())
+        collections.append(collection)
 
-# ---------- Collections ----------
-collections = [
-    Collection.objects.create(title=fake.word().capitalize()) for _ in range(5)
-]
-
-# ---------- Products ----------
-products = []
-for _ in range(NUM_PRODUCTS):
-    c = random.choice(collections)
-    p = Product.objects.create(
-        title=fake.word().capitalize(),
-        slug=fake.slug(),
-        description=fake.text(50),
-        unit_price=Decimal(random.randint(5, 100)),
-        inventory=random.randint(1, 200),
-        collection=c,
-    )
-    # Add random promotions
-    p.promotions.add(*random.sample(promos, k=random.randint(0, len(promos))))
-    products.append(p)
-
-# Feature a product in each collection
-for col in collections:
-    col.featured_product = random.choice(products)
-    col.save()
-
-# ---------- Customers ----------
-customers = []
-for _ in range(NUM_CUSTOMERS):
-    customers.append(
-        Customer.objects.create(
-            first_name=fake.first_name(),
-            last_name=fake.last_name(),
-            email=fake.unique.email(),
-            phone=fake.msisdn()[:13],
-            birth_date=fake.date_of_birth(minimum_age=18, maximum_age=80),
-            membership=random.choice(
-                [
-                    Customer.MEMBERSHIP_BRONZE,
-                    Customer.MEMBERSHIP_SILVER,
-                    Customer.MEMBERSHIP_GOLD,
-                ]
-            ),
+    print("✅ Creating promotions...")
+    promotions = []
+    for _ in range(5):
+        promo = Promotion.objects.create(
+            description=fake.sentence(), discount=random.uniform(0.05, 0.5)
         )
+        promotions.append(promo)
+
+    print("✅ Creating products...")
+    products = []
+    for _ in range(15):
+        product = Product.objects.create(
+            title=fake.unique.word().capitalize(),
+            slug=fake.unique.slug(),
+            description=fake.text(max_nb_chars=200),
+            unit_price=random.uniform(10.0, 500.0),
+            inventory=random.randint(0, 100),
+            collection=random.choice(collections),
+        )
+        # Assign random promotions
+        product.promotions.set(
+            random.sample(promotions, random.randint(0, len(promotions)))
+        )
+        products.append(product)
+
+    print("✅ Creating customers...")
+    customers = []
+    for _ in range(10):
+        try:
+            user = User.objects.create_user(
+                username=fake.unique.user_name(),
+                email=fake.unique.email(),
+                password="1234",
+            )
+            cust = Customer.objects.create(
+                user=user,
+                phone=fake.msisdn()[:13],
+                birth_date=fake.date_of_birth(minimum_age=18, maximum_age=80),
+                membership=random.choice(
+                    [
+                        Customer.MEMBERSHIP_BRONZE,
+                        Customer.MEMBERSHIP_SILVER,
+                        Customer.MEMBERSHIP_GOLD,
+                    ]
+                ),
+            )
+            customers.append(cust)
+        except IntegrityError:
+            print("⚠️ Skipping duplicate customer.")
+            continue
+
+    print("✅ Creating carts and cart items...")
+    carts = []
+    for _ in range(5):
+        cart = Cart.objects.create()
+        carts.append(cart)
+
+        # Add random unique products per cart
+        products_in_cart = random.sample(products, random.randint(1, 3))
+        for product in products_in_cart:
+            CartItem.objects.create(
+                cart=cart, product=product, quantity=random.randint(1, 5)
+            )
+
+    print("✅ Creating orders and order items...")
+    orders = []
+    if customers and products:
+        for _ in range(10):
+            customer = random.choice(customers)
+            order = Order.objects.create(customer=customer)
+            orders.append(order)
+
+            # Random 1–3 items per order
+            order_products = random.sample(products, random.randint(1, 3))
+            for prod in order_products:
+                OrderItems.objects.create(
+                    order=order,
+                    product=prod,
+                    quantity=random.randint(1, 5),
+                    unit_price=prod.unit_price,
+                )
+    else:
+        print("⚠️ Skipping order creation — missing customers or products.")
+
+    print("🎉 Seeding completed successfully!")
+    print(
+        f"Created: {len(collections)} collections, {len(promotions)} promotions, "
+        f"{len(products)} products, {len(customers)} customers, {len(orders)} orders, {len(carts)} carts."
     )
 
-# ---------- Addresses ----------
-for cust in customers:
-    for _ in range(random.randint(1, 2)):
-        Address.objects.create(
-            street=fake.street_address(), city=fake.city(), customer=cust
-        )
 
-# ---------- Orders & Items ----------
-orders = []
-for _ in range(NUM_ORDERS):
-    cust = random.choice(customers)
-    order = Order.objects.create(
-        customer=cust,
-        payment_status=random.choice(
-            [
-                Order.PAYMENT_PENDING,
-                Order.PAYMENT_COMPLETE,
-                Order.PAYMENT_FAILED,
-            ]
-        ),
-        placed_at=timezone.now() - timedelta(days=random.randint(0, 90)),
-    )
-    # add 1-3 products to each order
-    for _ in range(random.randint(1, 3)):
-        prod = random.choice(products)
-        OrderItems.objects.create(
-            order=order,
-            product=prod,
-            quantity=random.randint(1, 5),
-            unit_price=prod.unit_price,
-        )
-    orders.append(order)
-
-# ---------- Carts ----------
-for _ in range(NUM_CARTS):
-    cart = Cart.objects.create()
-    for _ in range(random.randint(1, 4)):
-        prod = random.choice(products)
-        CartItem.objects.create(cart=cart, product=prod, quantity=random.randint(1, 5))
-
-print("✅ Seeding completed.")
-print(
-    f"Created: {len(products)} products, {len(customers)} customers, "
-    f"{len(orders)} orders, {NUM_CARTS} carts."
-)
+if __name__ == "__main__":
+    try:
+        with transaction.atomic():
+            seed_data()
+    except Exception as e:
+        print(f"❌ Error during seeding: {e}")
