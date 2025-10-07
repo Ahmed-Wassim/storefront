@@ -55,7 +55,6 @@ class Customer(models.Model):
         (MEMBERSHIP_SILVER, "Silver"),
         (MEMBERSHIP_GOLD, "Gold"),
     ]
-    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=13)
     birth_date = models.DateField(null=True)
     membership = models.CharField(
@@ -97,7 +96,7 @@ class Order(models.Model):
 
 
 class OrderItems(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name="items")
     product = models.ForeignKey(
         Product, on_delete=models.PROTECT, related_name="orderitems"
     )
