@@ -174,3 +174,5 @@ EMAIL_PORT = 2525
 DEFAULT_FROM_EMAIL = "from@wassim.com"
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
+
+CELERY_BROKER_URL = "redis://redis:6379/1"
