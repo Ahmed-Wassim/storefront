@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django_filters",
     "rest_framework",
     "djoser",
+    "playground",
     "store",
     "tags",
     "core",
@@ -176,3 +177,10 @@ DEFAULT_FROM_EMAIL = "from@wassim.com"
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
 
 CELERY_BROKER_URL = "redis://redis:6379/1"
+CELERY_BEAT_SCHEDULE = {
+    "notify_customers": {
+        "task": "playground.tasks.notify_customers",
+        "schedule": 5,
+        "args": ["Hello World"],
+    }
+}
