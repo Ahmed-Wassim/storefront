@@ -94,10 +94,10 @@ WSGI_APPLICATION = "storefront.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "store",
+        "NAME": "storefront3",
         "USER": "root",
-        "PASSWORD": "password",
-        "HOST": "127.0.0.1",
+        "PASSWORD": "MyPassword",
+        "HOST": "mysql",
         "PORT": "3306",
     }
 }
@@ -164,3 +164,13 @@ DJOSER = {
         "current_user": "core.serializers.UserSerializer",
     }
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp4dev"
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""
+EMAIL_PORT = 2525
+DEFAULT_FROM_EMAIL = "from@wassim.com"
+
+DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
