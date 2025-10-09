@@ -22,7 +22,7 @@ RUN pipenv install --system --dev && \
     python -c "import django; print(f'Django {django.__version__} installed')"
 
 # Install Celery separately (not in Pipfile due to Windows incompatibility)
-RUN pip install redis celery
+RUN pip install redis celery flower
 
 # Copy the application files into the image
 COPY . /app/
